@@ -11,19 +11,21 @@ import {
 
 import { SafeAreaView } from "react-native-safe-area-context";
 
+// save 2 database
+import { Alert } from "react-native";
+import { doc, setDoc } from "firebase/firestore";
+import { auth, db } from "../firebaseConfig";
+
 export default function ProfileSetupScreen() {
-  // User information
+  // user info 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [hackathonName, setHackathonName] = useState("");
 
-  // Roles can have multiple selections
+  // roles 
   const [rolesSelected, setRolesSelected] = useState<string[]>([]);
-
-  // Experience level has one selection
   const [experienceLevel, setExperienceLevel] = useState("");
 
-  // Available roles
   const roles = [
     "Frontend",
     "Backend",
@@ -34,14 +36,13 @@ export default function ProfileSetupScreen() {
     "Product",
   ];
 
-  // Available experience levels
   const experienceLevels = [
     "Beginner",
     "Intermediate",
     "Advanced",
   ];
 
-  // Select or deselect a role
+  // select/deselect role 
   const toggleRole = (role: string) => {
     if (rolesSelected.includes(role)) {
       setRolesSelected(
@@ -51,6 +52,45 @@ export default function ProfileSetupScreen() {
       setRolesSelected([...rolesSelected, role]);
     }
   };
+
+  const handleContinue = async () => {
+  // Make sure required fields are filled out
+  if (
+    !firstName ||
+    !lastName ||
+    rolesSelected.length === 0 ||
+    !experienceLevel
+  ) {
+    Alert.alert(
+      "Missing information",
+      "Please complete all profile fields."
+    );
+    return;
+  }
+
+  // get the currently logged-in user
+  const user = auth.currentUser;
+
+  if (!user) {
+    Alert.alert("Error", "You must be logged in.");
+    return;
+  }
+
+  try {
+    // save selected under this user's UID
+    await setDoc(doc(db, "users", user.uid), {
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      roles: rolesSelected,
+      experienceLevel: experienceLevel,
+      profileComplete: true
+    });
+    Alert.alert("Success", "Profile saved!");
+  } catch (error: any) {
+    Alert.alert("Error", error.message);
+  }
+};
+
 
   return (
     <SafeAreaView style={styles.container}>
@@ -152,7 +192,8 @@ export default function ProfileSetupScreen() {
         </View>
 
         {/* Continue Button */}
-        <TouchableOpacity style={styles.button}>
+        <TouchableOpacity style={styles.button}
+        onPress={handleContinue}>
           <Text style={styles.buttonText}>Continue</Text>
         </TouchableOpacity>
       </ScrollView>

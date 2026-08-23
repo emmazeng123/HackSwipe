@@ -9,39 +9,76 @@ import {
   View,
 } from "react-native";
 
-
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-
 
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
 } from "firebase/auth";
 
-import { auth } from "../../firebaseConfig";
+import { auth, db } from "../firebaseConfig";
+import { doc, getDoc } from "firebase/firestore";
 
 export default function HomeScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSignUp, setIsSignUp] = useState(true);
+
   const router = useRouter();
 
-  const handleAuth = async () => { 
+  const handleAuth = async () => {
     if (!email || !password) {
-      Alert.alert("Missing information", "Enter an email and password.");
+      Alert.alert(
+        "Missing information",
+        "Enter an email and password."
+      );
       return;
     }
 
     try {
-      // sign up 
+      // Sign up
       if (isSignUp) {
-        await createUserWithEmailAndPassword(auth, email.trim(), password);
-        Alert.alert("Success", "Your HackSwipe account was created!");
+        await createUserWithEmailAndPassword(
+          auth,
+          email.trim(),
+          password
+        );
+
+        Alert.alert(
+          "Success",
+          "Your HackSwipe account was created!"
+        );
+
         router.push("/setup-profile");
-      } else { // log in
-        await signInWithEmailAndPassword(auth, email.trim(), password);
-        Alert.alert("Success", "You're logged in!");
+        return;
+      }
+
+      // Log in
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email.trim(),
+        password
+      );
+
+      // Get the UID Firebase Authentication gave this user
+      const uid = userCredential.user.uid;
+
+      // Point to this user's Firestore profile
+      const userRef = doc(db, "users", uid);
+
+      // Retrieve the profile
+      const userSnapshot = await getDoc(userRef);
+
+      // Check whether profile setup was completed
+      if (
+        userSnapshot.exists() &&
+        userSnapshot.data().profileComplete === true
+      ) {
+        // Profile exists and is complete
+        router.push("/(tabs)/swipe");
+      } else {
+        // Account exists, but profile setup is incomplete
         router.push("/setup-profile");
       }
     } catch (error: any) {
@@ -52,7 +89,6 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-
         <Text style={styles.logo}>HackSwipe</Text>
 
         <Text style={styles.tagline}>
@@ -62,6 +98,7 @@ export default function HomeScreen() {
         <TextInput
           style={styles.input}
           placeholder="Email"
+          placeholderTextColor="#666"
           autoCapitalize="none"
           keyboardType="email-address"
           value={email}
@@ -71,6 +108,7 @@ export default function HomeScreen() {
         <TextInput
           style={styles.input}
           placeholder="Password"
+          placeholderTextColor="#666"
           secureTextEntry
           value={password}
           onChangeText={setPassword}
@@ -94,7 +132,6 @@ export default function HomeScreen() {
               : "Don't have an account? Sign up"}
           </Text>
         </TouchableOpacity>
-
       </View>
     </SafeAreaView>
   );
