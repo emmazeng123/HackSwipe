@@ -16,6 +16,9 @@ import { Alert } from "react-native";
 import { doc, setDoc } from "firebase/firestore";
 import { auth, db } from "../firebaseConfig";
 
+import { useRouter } from "expo-router";
+const router = useRouter();
+
 export default function ProfileSetupScreen() {
   // user info 
   const [firstName, setFirstName] = useState("");
@@ -85,7 +88,7 @@ export default function ProfileSetupScreen() {
       experienceLevel: experienceLevel,
       profileComplete: true
     });
-    Alert.alert("Success", "Profile saved!");
+    router.replace("/(tabs)/swipe");
   } catch (error: any) {
     Alert.alert("Error", error.message);
   }
