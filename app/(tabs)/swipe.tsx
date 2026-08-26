@@ -13,7 +13,9 @@ import {
 
 import { SafeAreaView } from "react-native-safe-area-context";
 import { auth } from "../../firebaseConfig";
+import { useRouter } from "expo-router";
 
+const router = useRouter();
 const SWIPE_THRESHOLD = 120;
 
 const testProfiles = [
@@ -53,19 +55,18 @@ export default function SwipeScreen() {
     setLoading(false);
   }, []);
 
-  // Reset card position when we move to a new profile
+  // reset card position when new profile
   const resetCardPosition = () => {
     pan.setValue({ x: 0, y: 0 });
   };
 
-  // Move to the next profile
+  // show next profile
   const showNextProfile = () => {
     resetCardPosition();
 
     setCurrentIndex((prevIndex) => prevIndex + 1);
   };
 
-  // Handle a like
   const handleLike = async () => {
     const currentUser = auth.currentUser;
 
@@ -85,6 +86,20 @@ export default function SwipeScreen() {
         "It's a Match! 🔥",
         `You matched with ${profile.firstName}!`
       );
+    [
+        {
+        text: "Keep Swiping",
+        style: "cancel",
+        },
+        {
+        text: "Open Chat",
+        onPress: () => {
+            // router to chat
+            router.push("/(tabs)/chat")
+        },
+        },
+    ]
+
     }
 
     showNextProfile();
